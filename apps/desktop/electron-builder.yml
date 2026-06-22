@@ -1,0 +1,38 @@
+appId: com.pltlg.diariza
+productName: diariza
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+# The PyInstaller-built engine and ffmpeg are placed under resources/ so the main process can
+# launch them in production (see src/main/sidecar.ts). Populated by the packaging step (M6).
+extraResources:
+  - from: ../../packaging/dist/backend
+    to: backend
+    filter: ["**/*"]
+  - from: ../../packaging/ffmpeg
+    to: backend
+    filter: ["ffmpeg*"]
+
+win:
+  target:
+    - nsis
+  artifactName: ${productName}-${version}-setup.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
+mac:
+  target:
+    - dmg
+  category: public.app-category.productivity
+  # Notarization requires an Apple Developer ID; configure via env (APPLE_ID, etc.) in CI.
+
+linux:
+  target:
+    - AppImage
