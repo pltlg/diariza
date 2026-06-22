@@ -13,7 +13,7 @@ import threading
 import traceback
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Optional
 
 from .merge import assign_speakers, speaker_stats
 from .pipeline import PipelineResult, run_pipeline

@@ -1,0 +1,76 @@
+name: build-release
+
+# Build bundled installers on a version tag. Produces a Windows CPU + CUDA .exe and a macOS .dmg.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        flavor: [cpu, cuda]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+
+      - name: Fetch ffmpeg
+        shell: pwsh
+        run: |
+          Invoke-WebRequest "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ff.zip
+          Expand-Archive ff.zip -DestinationPath ff
+          Copy-Item (Get-ChildItem ff -Recurse -Filter ffmpeg.exe)[0].FullName packaging/ffmpeg/ffmpeg.exe
+
+      - name: Build engine (${{ matrix.flavor }})
+        working-directory: packaging
+        shell: pwsh
+        run: |
+          if ("${{ matrix.flavor }}" -eq "cuda") { ./build_backend.ps1 -Cuda cu121 }
+          else { ./build_backend.ps1 }
+
+      - name: Build installer
+        working-directory: apps/desktop
+        run: |
+          npm ci
+          npm run dist:win
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diariza-windows-${{ matrix.flavor }}
+          path: apps/desktop/release/*.exe
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+
+      - name: Fetch ffmpeg
+        run: |
+          brew install ffmpeg
+          cp "$(which ffmpeg)" packaging/ffmpeg/ffmpeg
+
+      - name: Build engine
+        working-directory: packaging
+        run: ./build_backend.sh
+
+      - name: Build installer
+        working-directory: apps/desktop
+        # Notarization: set APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID secrets and a
+        # Developer ID cert to enable; without them the .dmg is unsigned.
+        run: |
+          npm ci
+          npm run dist:mac
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diariza-macos
+          path: apps/desktop/release/*.dmg

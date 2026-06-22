@@ -70,7 +70,6 @@ class PyannoteLocalBackend(DiarizationBackend):
         progress: ProgressFn = _noop,
         **options,
     ) -> list[Segment]:
-        import numpy as np  # noqa: PLC0415
         import soundfile as sf  # noqa: PLC0415
         import torch  # noqa: PLC0415
         from pyannote.audio import Pipeline  # noqa: PLC0415

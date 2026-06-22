@@ -28,6 +28,11 @@ models/
 *.ckpt
 *.onnx
 
+# Bundled ffmpeg binaries (downloaded at build time; keep the README)
+packaging/ffmpeg/ffmpeg
+packaging/ffmpeg/ffmpeg.exe
+packaging/.buildvenv/
+
 # Secrets
 .env
 *.env.local

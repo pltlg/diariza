@@ -7,7 +7,7 @@ file since the engine runs on the user's machine.
 from __future__ import annotations
 
 import time
-from typing import Any, Optional
+from typing import Any
 
 from .. import config
 

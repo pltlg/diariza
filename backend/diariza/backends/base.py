@@ -9,7 +9,7 @@ options dynamically, so adding a new model never touches the core.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Sequence
+from typing import Callable, Optional
 
 from ..types import Cue, Segment
 
