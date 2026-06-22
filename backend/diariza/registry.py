@@ -20,9 +20,15 @@ from .backends.base import DiarizationBackend, TranscriptionBackend
 # (entry-point name, "module:ClassName") — fallback when entry points aren't registered.
 _BUILTIN_DIARIZATION = {
     "pyannote-local": "diariza.backends.diarization.pyannote_local:PyannoteLocalBackend",
+    "nemo-local": "diariza.backends.diarization.nemo_local:NeMoLocalBackend",
+    "pyannoteai-cloud": "diariza.backends.diarization.pyannote_cloud:PyannoteAICloudDiarization",
+    "assemblyai-cloud": "diariza.backends.diarization.assemblyai:AssemblyAICloudDiarization",
+    "deepgram-cloud": "diariza.backends.diarization.deepgram:DeepgramCloudDiarization",
 }
 _BUILTIN_TRANSCRIPTION = {
     "faster-whisper-local": "diariza.backends.transcription.faster_whisper_local:FasterWhisperBackend",
+    "assemblyai-cloud": "diariza.backends.transcription.assemblyai:AssemblyAICloudTranscription",
+    "deepgram-cloud": "diariza.backends.transcription.deepgram:DeepgramCloudTranscription",
 }
 
 

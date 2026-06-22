@@ -39,9 +39,15 @@ diariza = "diariza.cli:app"
 # under these groups and they appear in the app automatically.
 [project.entry-points."diariza.diarization_backends"]
 pyannote-local = "diariza.backends.diarization.pyannote_local:PyannoteLocalBackend"
+nemo-local = "diariza.backends.diarization.nemo_local:NeMoLocalBackend"
+pyannoteai-cloud = "diariza.backends.diarization.pyannote_cloud:PyannoteAICloudDiarization"
+assemblyai-cloud = "diariza.backends.diarization.assemblyai:AssemblyAICloudDiarization"
+deepgram-cloud = "diariza.backends.diarization.deepgram:DeepgramCloudDiarization"
 
 [project.entry-points."diariza.transcription_backends"]
 faster-whisper-local = "diariza.backends.transcription.faster_whisper_local:FasterWhisperBackend"
+assemblyai-cloud = "diariza.backends.transcription.assemblyai:AssemblyAICloudTranscription"
+deepgram-cloud = "diariza.backends.transcription.deepgram:DeepgramCloudTranscription"
 
 [tool.setuptools.packages.find]
 where = ["."]

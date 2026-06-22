@@ -23,11 +23,15 @@ def test_backends_expose_schema():
     data = r.json()
     diar_names = {b["name"] for b in data["diarization"]}
     asr_names = {b["name"] for b in data["transcription"]}
-    assert "pyannote-local" in diar_names
-    assert "faster-whisper-local" in asr_names
+    assert {"pyannote-local", "nemo-local", "pyannoteai-cloud", "assemblyai-cloud",
+            "deepgram-cloud"} <= diar_names
+    assert {"faster-whisper-local", "assemblyai-cloud", "deepgram-cloud"} <= asr_names
     # Each backend advertises a config schema the UI can render.
     for b in data["diarization"] + data["transcription"]:
         assert "config_schema" in b or b.get("available") is False
+    # Cloud backends declare they need an API key.
+    aai = next(b for b in data["diarization"] if b["name"] == "assemblyai-cloud")
+    assert aai["requires_api_key"] is True
 
 
 def test_unknown_job_404():
