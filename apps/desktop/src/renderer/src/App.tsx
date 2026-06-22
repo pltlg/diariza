@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Api } from './api'
 import type { BackendInfo, Device, JobStatus, SpeakerStat } from './types'
 import { Settings } from './Settings'
+import { Lang, loadLang, makeT, saveLang } from './i18n'
 
 type Step = 'loading' | 'import' | 'configure' | 'run' | 'speakers' | 'export' | 'error'
 
@@ -10,6 +11,8 @@ export default function App() {
   const [step, setStep] = useState<Step>('loading')
   const [fatal, setFatal] = useState<string>('')
   const [showSettings, setShowSettings] = useState(false)
+  const [lang, setLang] = useState<Lang>(loadLang())
+  const t = useMemo(() => makeT(lang), [lang])
 
   // inputs
   const [mediaPath, setMediaPath] = useState('')
@@ -35,14 +38,12 @@ export default function App() {
   const [names, setNames] = useState<Record<string, string>>({})
   const closeWs = useRef<() => void>()
 
-  // --- boot: wait for backend, load metadata ---
   useEffect(() => {
     let cancelled = false
     const boot = async () => {
       try {
         const url = await window.diariza.backendUrl()
         const a = new Api(url || 'http://127.0.0.1:8765')
-        // poll health until ready
         for (let i = 0; i < 150; i++) {
           try {
             await a.health()
@@ -81,7 +82,12 @@ export default function App() {
     return best ? `${best.kind.toUpperCase()} — ${best.name}` : 'CPU'
   }, [devices])
 
-  const isModeA = !transcriptPath // ASR from scratch when no transcript imported
+  const isModeA = !transcriptPath
+
+  function changeLang(l: Lang) {
+    setLang(l)
+    saveLang(l)
+  }
 
   async function pickMedia() {
     const p = await window.diariza.openFile([
@@ -148,15 +154,13 @@ export default function App() {
     setJob(updated)
   }
 
-  // ---------- render ----------
-  if (step === 'loading')
-    return <Center>Starting the diariza engine…</Center>
+  if (step === 'loading') return <Center>{t('starting')}</Center>
   if (step === 'error')
     return (
       <Center>
-        <h2>Backend error</h2>
+        <h2>{t('backendError')}</h2>
         <pre className="error">{fatal}</pre>
-        <p className="muted">Check that Python and the engine are installed (dev), or reinstall the app.</p>
+        <p className="muted">{t('backendHint')}</p>
       </Center>
     )
 
@@ -165,134 +169,129 @@ export default function App() {
       <header>
         <div className="brand">diariza</div>
         <nav>
-          <Stepper step={step} />
-          <button className="ghost" onClick={() => setShowSettings(true)}>Settings</button>
+          <Stepper step={step} t={t} />
+          <select className="lang" value={lang} onChange={(e) => changeLang(e.target.value as Lang)}>
+            <option value="en">EN</option>
+            <option value="hu">HU</option>
+          </select>
+          <button className="ghost" onClick={() => setShowSettings(true)}>{t('settings')}</button>
         </nav>
       </header>
 
       <main>
         {step === 'import' && (
           <section>
-            <h2>1 · Import</h2>
-            <Field label="Media file (video or audio)" required>
-              <PathInput value={mediaPath} onPick={pickMedia} placeholder="Choose a video/audio file…" />
+            <h2>1 · {t('step.import')}</h2>
+            <Field label={t('mediaFile')} required>
+              <PathInput value={mediaPath} onPick={pickMedia} browse={t('browse')} placeholder={t('chooseMedia')} />
             </Field>
-            <Field label="Existing transcript (optional — VTT/SRT)">
-              <PathInput value={transcriptPath} onPick={pickTranscript} placeholder="Leave empty to transcribe with Whisper" onClear={() => setTranscriptPath('')} />
+            <Field label={t('existingTranscript')}>
+              <PathInput value={transcriptPath} onPick={pickTranscript} browse={t('browse')} placeholder={t('transcriptPlaceholder')} onClear={() => setTranscriptPath('')} />
             </Field>
-            <p className="muted">
-              {isModeA ? 'Mode A: transcribe from scratch, then diarize.' : 'Mode B: add speakers to your transcript.'}
-            </p>
+            <p className="muted">{isModeA ? t('modeA') : t('modeB')}</p>
             <div className="actions">
-              <button disabled={!mediaPath} onClick={() => setStep('configure')}>Next</button>
+              <button disabled={!mediaPath} onClick={() => setStep('configure')}>{t('next')}</button>
             </div>
           </section>
         )}
 
         {step === 'configure' && (
           <section>
-            <h2>2 · Configure</h2>
+            <h2>2 · {t('step.configure')}</h2>
             <div className="grid">
-              <Field label="Diarization model">
+              <Field label={t('diarizationModel')}>
                 <select value={diar} onChange={(e) => setDiar(e.target.value)}>
-                  {diarBackends.map((b) => (
-                    <option key={b.name} value={b.name}>{b.name}</option>
-                  ))}
+                  {diarBackends.map((b) => <option key={b.name} value={b.name}>{b.name}</option>)}
                 </select>
               </Field>
               {isModeA && (
-                <Field label="Transcription model">
+                <Field label={t('transcriptionModel')}>
                   <select value={asr} onChange={(e) => setAsr(e.target.value)}>
-                    {asrBackends.map((b) => (
-                      <option key={b.name} value={b.name}>{b.name}</option>
-                    ))}
+                    {asrBackends.map((b) => <option key={b.name} value={b.name}>{b.name}</option>)}
                   </select>
                 </Field>
               )}
-              <Field label="Device">
+              <Field label={t('device')}>
                 <select value={device} onChange={(e) => setDevice(e.target.value)}>
-                  <option value="auto">Auto (detected: {deviceLabel})</option>
+                  <option value="auto">{t('autoDetected', { dev: deviceLabel })}</option>
                   <option value="gpu">GPU</option>
                   <option value="cpu">CPU</option>
                 </select>
               </Field>
-              <Field label="Number of speakers (blank = auto)">
+              <Field label={t('numSpeakers')}>
                 <input type="number" min={1} value={numSpeakers} onChange={(e) => setNumSpeakers(e.target.value)} />
               </Field>
               {isModeA && (
-                <Field label="Language (blank = auto-detect)">
-                  <input value={language} onChange={(e) => setLanguage(e.target.value)} placeholder="e.g. hu, en" />
+                <Field label={t('language')}>
+                  <input value={language} onChange={(e) => setLanguage(e.target.value)} placeholder="hu, en…" />
                 </Field>
               )}
-              <Field label="Output folder">
-                <PathInput value={outputDir} onPick={pickOut} placeholder="Default: ./out" />
+              <Field label={t('outputFolder')}>
+                <PathInput value={outputDir} onPick={pickOut} browse={t('browse')} placeholder={t('outputDefault')} />
               </Field>
             </div>
             <div className="actions">
-              <button className="ghost" onClick={() => setStep('import')}>Back</button>
-              <button onClick={start}>Start</button>
+              <button className="ghost" onClick={() => setStep('import')}>{t('back')}</button>
+              <button onClick={start}>{t('start')}</button>
             </div>
           </section>
         )}
 
         {step === 'run' && job && (
           <section>
-            <h2>3 · Run</h2>
+            <h2>3 · {t('step.run')}</h2>
             <div className="progress"><div style={{ width: `${Math.round(job.progress * 100)}%` }} /></div>
             <p>{Math.round(job.progress * 100)}% — {job.message}</p>
             {job.status === 'error' && <pre className="error">{job.error}</pre>}
             <pre className="log">{log.slice(-120).join('')}</pre>
             <div className="actions">
-              <button className="ghost" onClick={cancel}>Cancel</button>
+              <button className="ghost" onClick={cancel}>{t('cancel')}</button>
             </div>
           </section>
         )}
 
         {step === 'speakers' && job && (
           <section>
-            <h2>4 · Speakers</h2>
-            <p className="muted">Rename speakers. Give two rows the same name to merge them, then Apply.</p>
+            <h2>4 · {t('step.speakers')}</h2>
+            <p className="muted">{t('speakersHint')}</p>
             <table className="speakers">
-              <thead><tr><th>Detected</th><th>Speaking time</th><th>Lines</th><th>Name</th></tr></thead>
+              <thead><tr><th>{t('detected')}</th><th>{t('speakingTime')}</th><th>{t('lines')}</th><th>{t('name')}</th></tr></thead>
               <tbody>
                 {initialSpeakers.map((s) => (
                   <tr key={s.speaker}>
                     <td><code>{s.speaker}</code></td>
-                    <td>{s.minutes} min</td>
+                    <td>{s.minutes} {t('minutes')}</td>
                     <td>{s.cues}</td>
                     <td>
-                      <input
-                        value={names[s.speaker] ?? ''}
-                        placeholder={s.speaker}
-                        onChange={(e) => setNames({ ...names, [s.speaker]: e.target.value })}
-                      />
+                      <input value={names[s.speaker] ?? ''} placeholder={s.speaker}
+                        onChange={(e) => setNames({ ...names, [s.speaker]: e.target.value })} />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div className="actions">
-              <button className="ghost" onClick={applyNames}>Apply names</button>
-              <button onClick={() => setStep('export')}>Next</button>
+              <button className="ghost" onClick={applyNames}>{t('applyNames')}</button>
+              <button onClick={() => setStep('export')}>{t('next')}</button>
             </div>
           </section>
         )}
 
         {step === 'export' && job && (
           <section>
-            <h2>5 · Export</h2>
-            <p>Done. Files written:</p>
+            <h2>5 · {t('step.export')}</h2>
+            <p>{t('done')}</p>
             <ul className="outputs">
               {Object.entries(job.outputs ?? {}).map(([k, v]) => (
                 <li key={k}>
                   <span className="kind">{k}</span>
                   <code>{v}</code>
-                  <button className="ghost sm" onClick={() => window.diariza.showInFolder(v)}>Reveal</button>
+                  <button className="ghost sm" onClick={() => window.diariza.showInFolder(v)}>{t('reveal')}</button>
                 </li>
               ))}
             </ul>
             <div className="actions">
-              <button className="ghost" onClick={() => setStep('import')}>New job</button>
+              <button className="ghost" onClick={() => setStep('import')}>{t('newJob')}</button>
             </div>
           </section>
         )}
@@ -303,17 +302,16 @@ export default function App() {
   )
 }
 
-// ---------- small presentational helpers ----------
 function Center({ children }: { children: React.ReactNode }) {
   return <div className="center">{children}</div>
 }
 
-function Stepper({ step }: { step: Step }) {
+function Stepper({ step, t }: { step: Step; t: (k: string) => string }) {
   const steps: Step[] = ['import', 'configure', 'run', 'speakers', 'export']
   return (
     <ol className="stepper">
       {steps.map((s, i) => (
-        <li key={s} className={s === step ? 'on' : ''}>{i + 1}. {s}</li>
+        <li key={s} className={s === step ? 'on' : ''}>{i + 1}. {t(`step.${s}`)}</li>
       ))}
     </ol>
   )
@@ -328,11 +326,11 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
-function PathInput({ value, onPick, onClear, placeholder }: { value: string; onPick: () => void; onClear?: () => void; placeholder?: string }) {
+function PathInput({ value, onPick, onClear, placeholder, browse }: { value: string; onPick: () => void; onClear?: () => void; placeholder?: string; browse: string }) {
   return (
     <div className="pathinput">
       <input readOnly value={value} placeholder={placeholder} />
-      <button className="ghost" onClick={onPick}>Browse</button>
+      <button className="ghost" onClick={onPick}>{browse}</button>
       {onClear && value && <button className="ghost" onClick={onClear}>✕</button>}
     </div>
   )

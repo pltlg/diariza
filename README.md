@@ -33,9 +33,20 @@ diariza run path/to/video.mp4 --transcript path/to/transcript.vtt --num-speakers
 diariza run path/to/video.mp4 --transcribe --language hu -o out/
 ```
 
-See `docs/` for backend plugin authoring and the full app build.
+## Docs
+
+- [Usage](docs/usage.md) — install, first-run model/key setup, the import→export workflow, CLI.
+- [Architecture](docs/architecture.md) — component + process-flow diagrams.
+- [Authoring a backend](docs/backends.md) — add a diarization/transcription model as a plugin.
 
 ## Status
 
-Early development. Milestone order: M0 scaffold → M1 headless engine → M2 API → M3 Electron shell →
-M4 speaker labeling UI → M5 more backends → M6 packaging.
+Feature-complete across the planned milestones:
+
+- **M1 engine** — pipeline, plugin registry, hardware probe, ffmpeg ingest, merge/export, CLI.
+- **M2 API** — FastAPI REST + WebSocket job server.
+- **M3 shell** — Electron + React app with a managed Python sidecar.
+- **M4 labeling** — rename/merge speakers and re-export.
+- **M5 backends** — local (pyannote, NeMo) + cloud (pyannoteAI, AssemblyAI, Deepgram).
+- **M6 packaging** — PyInstaller engine + electron-builder installers + CI.
+- **M7 polish** — EN/HU i18n, docs, error handling.
