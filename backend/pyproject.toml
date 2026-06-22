@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "diariza"
+version = "0.1.0"
+description = "Engine for the diariza app: transcribe + diarize media into speaker-labeled transcripts"
+requires-python = ">=3.10,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "Gábor Pletl" }]
+dependencies = [
+    "numpy<2",            # pyannote 3.1.x uses removed np.NaN; keep <2 (see hardware notes)
+    "soundfile>=0.12",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "websockets>=12",
+    "pydantic>=2.6",
+    "typer>=0.12",
+    "keyring>=24",
+]
+
+[project.optional-dependencies]
+# Heavy local-ML extras are grouped so the headless engine + tests install fast.
+pyannote = [
+    "torch==2.5.1",            # cu118/cu121 build chosen at install time for GPU; see hardware.py
+    "torchaudio==2.5.1",
+    "pyannote.audio==3.1.1",
+    "huggingface-hub==0.23.5", # 3.1.1 still passes use_auth_token, removed in hub 1.x
+]
+whisper = ["faster-whisper>=1.0"]
+cloud = ["httpx>=0.27"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.4", "httpx>=0.27"]
+
+[project.scripts]
+diariza = "diariza.cli:app"
+
+# Plugin discovery: built-in backends registered as entry points. Third parties add their own
+# under these groups and they appear in the app automatically.
+[project.entry-points."diariza.diarization_backends"]
+pyannote-local = "diariza.backends.diarization.pyannote_local:PyannoteLocalBackend"
+
+[project.entry-points."diariza.transcription_backends"]
+faster-whisper-local = "diariza.backends.transcription.faster_whisper_local:FasterWhisperBackend"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["diariza*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

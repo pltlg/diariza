@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# Node / Electron
+node_modules/
+apps/desktop/dist/
+apps/desktop/out/
+apps/desktop/release/
+*.log
+
+# Models / media / outputs (never commit large or sensitive data)
+*.wav
+*.mp4
+*.mkv
+*.mov
+*.m4a
+models/
+*.bin
+*.ckpt
+*.onnx
+
+# Secrets
+.env
+*.env.local
+
+# OS
+.DS_Store
+Thumbs.db
